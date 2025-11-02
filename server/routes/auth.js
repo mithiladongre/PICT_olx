@@ -22,8 +22,11 @@ router.post('/register', [
   body('phone').isLength({ min: 10, max: 10 }).withMessage('Phone must be 10 digits'),
   body('whatsapp').isLength({ min: 10, max: 10 }).withMessage('WhatsApp must be 10 digits'),
   body('year').isIn(['FE', 'SE', 'TE', 'BE']).withMessage('Invalid year'),
-  body('branch').isIn(['Computer', 'IT', 'E&TC', 'Mechanical', 'Civil']).withMessage('Invalid branch'),
-  body('pictIdCard').matches(/^PICT-(CS|IT|ETC|MECH|CIVIL)-20[0-9]{2}-[0-9]{3}$/).withMessage('Please enter a valid PICT ID card number (e.g., PICT-CS-2023-001)')
+  // body('branch').isIn(['Computer', 'IT', 'E&TC', 'Mechanical', 'Civil']).withMessage('Invalid branch'),
+  body('branch').isIn(['CS', 'IT', 'ENTC', 'AIDS', 'ECE']).withMessage('Invalid branch'),
+  //body('pictReg').matches(/^[A-Z]{1,2}2K\d{6}$/).withMessage('Invalid PICT Registration Number (e.g., E2K221133)'),
+
+   body('pictIdCard').matches(/^[A-Z]{1,2}2K\d{6}$/).withMessage('Please enter a valid PICT ID card number (e.g., E2K221133)')
 ], async (req, res) => {
   try {
     const errors = validationResult(req);
@@ -323,3 +326,202 @@ router.delete('/delete-user', async (req, res) => {
 });
 
 module.exports = router;
+// const express = require('express');
+// const router = express.Router();
+// const { body, validationResult } = require('express-validator');
+// const jwt = require('jsonwebtoken');
+// const User = require('../models/User');
+// const { generateOTP, sendOTPEmail, sendWelcomeEmail } = require('../services/emailService');
+
+// // Generate JWT token
+// const generateToken = (userId) => {
+//   const secret = process.env.JWT_SECRET || 'fallback_secret_key_for_development_only';
+//   console.log('JWT_SECRET exists:', !!process.env.JWT_SECRET);
+//   return jwt.sign({ userId }, secret, { expiresIn: '7d' });
+// };
+
+// // @route   POST /api/auth/register
+// // @desc    Register a new user
+// // @access  Public
+// router.post('/register', [
+//   body('name').trim().isLength({ min: 2 }).withMessage('Name must be at least 2 characters'),
+//   body('email').isEmail().withMessage('Please enter a valid email'),
+//   body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters'),
+//   body('phone').isLength({ min: 10, max: 10 }).withMessage('Phone must be 10 digits'),
+//   body('whatsapp').isLength({ min: 10, max: 10 }).withMessage('WhatsApp must be 10 digits'),
+//   body('year').isIn(['FE', 'SE', 'TE', 'BE']).withMessage('Invalid year'),
+//   body('branch').isIn(['CS', 'IT', 'ENTC', 'AIDS', 'ECE']).withMessage('Invalid branch'),
+//   body('pictReg').matches(/^[A-Z]{1,2}2K\d{6}$/).withMessage('Invalid PICT Registration Number (e.g., E2K221133)'),
+// ], async (req, res) => {
+//   try {
+//     const errors = validationResult(req);
+//     if (!errors.isEmpty()) {
+//       return res.status(400).json({ errors: errors.array() });
+//     }
+
+//     const { name, email, password, phone, whatsapp, year, branch, pictIdCard, pictReg } = req.body;
+
+//     // ✅ Branch & PICT Reg validation
+//     const branchPrefixMap = {
+//       CS: "C2K",
+//       IT: "I2K",
+//       ENTC: "E2K",
+//       AIDS: "A2K",
+//       ECE: "EC2K"
+//     };
+
+//     const regPrefix = pictReg.substring(0, pictReg.length - 6);
+
+//     if (branchPrefixMap[branch] !== regPrefix) {
+//       return res.status(400).json({
+//         message: `Branch & Registration Number mismatch. Expected prefix for ${branch} is '${branchPrefixMap[branch]}'.`
+//       });
+//     }
+
+//     // Already registered email?
+//     const existingUserByEmail = await User.findOne({ email });
+//     if (existingUserByEmail) {
+//       return res.status(400).json({ message: 'User already exists with this email' });
+//     }
+
+//     // Already registered PICT ID?
+//     const existingUserByPictId = await User.findOne({ pictIdCard });
+//     if (existingUserByPictId) {
+//       return res.status(400).json({ message: 'PICT ID card already registered' });
+//     }
+
+//     // OTP
+//     const otp = generateOTP();
+//     const otpExpiry = new Date(Date.now() + 10 * 60 * 1000);
+
+//     const user = new User({
+//       name,
+//       email,
+//       password,
+//       phone,
+//       whatsapp,
+//       year,
+//       branch,
+//       pictIdCard,
+//       pictReg,
+//       emailOTP: otp,
+//       emailOTPExpiry: otpExpiry,
+//       isVerified: false
+//     });
+
+//     await user.save();
+
+//     const emailResult = await sendOTPEmail(email, otp);
+//     if (!emailResult.success) {
+//       await User.findByIdAndDelete(user._id);
+//       return res.status(500).json({ message: 'Failed to send verification email. Please try again.' });
+//     }
+
+//     res.status(201).json({
+//       message: 'Registration successful! Check email for OTP.',
+//       userId: user._id,
+//       email: user.email,
+//       otpSent: true
+//     });
+//   } catch (error) {
+//     console.error('Registration error:', error);
+//     res.status(500).json({ message: 'Server error during registration' });
+//   }
+// });
+
+// // @route   POST /api/auth/verify-email
+// router.post('/verify-email', [
+//   body('email').isEmail(),
+//   body('otp').isLength({ min: 6, max: 6 })
+// ], async (req, res) => {
+//   try {
+//     const errors = validationResult(req);
+//     if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
+
+//     const { email, otp } = req.body;
+//     const user = await User.findOne({ email });
+
+//     if (!user) return res.status(404).json({ message: 'User not found' });
+//     if (user.isVerified) return res.status(400).json({ message: 'Email already verified' });
+//     if (user.emailOTP !== otp) return res.status(400).json({ message: 'Invalid OTP' });
+//     if (new Date() > user.emailOTPExpiry) return res.status(400).json({ message: 'OTP expired' });
+
+//     user.isVerified = true;
+//     user.emailOTP = null;
+//     user.emailOTPExpiry = null;
+//     await user.save();
+
+//     await sendWelcomeEmail(email, user.name);
+//     const token = generateToken(user._id);
+
+//     res.status(200).json({
+//       message: 'Email verified successfully!',
+//       token,
+//       user
+//     });
+//   } catch (error) {
+//     res.status(500).json({ message: 'Server error' });
+//   }
+// });
+
+// // LOGIN
+// router.post('/login', [
+//   body('email').isEmail(),
+//   body('password').exists()
+// ], async (req, res) => {
+//   try {
+//     const errors = validationResult(req);
+//     if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
+
+//     const { email, password } = req.body;
+//     const user = await User.findOne({ email });
+//     if (!user) return res.status(400).json({ message: 'Invalid credentials' });
+
+//     const isMatch = await user.comparePassword(password);
+//     if (!isMatch) return res.status(400).json({ message: 'Invalid credentials' });
+
+//     if (!user.isVerified)
+//       return res.status(400).json({ message: 'Verify email before login.', needsVerification: true, email });
+
+//     const token = generateToken(user._id);
+//     res.json({ message: 'Login successful', token, user });
+//   } catch (error) {
+//     res.status(500).json({ message: 'Server error during login' });
+//   }
+// });
+
+// // PROFILE
+// router.get('/profile', async (req, res) => {
+//   try {
+//     const token = req.header('Authorization')?.replace('Bearer ', '');
+//     if (!token) return res.status(401).json({ message: 'No token' });
+
+//     const secret = process.env.JWT_SECRET || 'fallback_secret_key_for_development_only';
+//     const decoded = jwt.verify(token, secret);
+//     const user = await User.findById(decoded.userId).select('-password');
+
+//     if (!user) return res.status(404).json({ message: 'User not found' });
+
+//     res.json(user);
+//   } catch (error) {
+//     res.status(401).json({ message: 'Token invalid' });
+//   }
+// });
+
+// // DELETE USER (DEV ONLY)
+// router.delete('/delete-user', async (req, res) => {
+//   try {
+//     const { email } = req.body;
+//     if (!email) return res.status(400).json({ message: 'Email required' });
+
+//     const user = await User.findOne({ email });
+//     if (!user) return res.status(404).json({ message: 'User not found' });
+
+//     await User.findByIdAndDelete(user._id);
+//     res.json({ message: 'User deleted', deletedEmail: email });
+//   } catch (error) {
+//     res.status(500).json({ message: 'Server error' });
+//   }
+// });
+
+// module.exports = router;

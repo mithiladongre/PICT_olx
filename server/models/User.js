@@ -37,7 +37,7 @@ const userSchema = new mongoose.Schema({
   branch: {
     type: String,
     required: true,
-    enum: ['Computer', 'IT', 'E&TC', 'Mechanical', 'Civil']
+    enum: ['CS', 'IT', 'ENTC', 'AIDS', 'ECE']
   },
   profileImage: {
     type: String,
@@ -61,12 +61,10 @@ const userSchema = new mongoose.Schema({
     unique: true,
     validate: {
       validator: function(v) {
-        // PICT ID format: PICT + Branch Code + Year + Serial Number
-        // Examples: PICT-CS-2023-001, PICT-IT-2022-045, PICT-ETC-2024-123
-        const pictIdRegex = /^PICT-(CS|IT|ETC|MECH|CIVIL)-20[0-9]{2}-[0-9]{3}$/;
+        const pictIdRegex = /^[A-Z]{1,2}2K\d{6}$/
         return pictIdRegex.test(v);
       },
-      message: 'Please enter a valid PICT ID card number (e.g., PICT-CS-2023-001)'
+      message: 'Please enter a valid PICT ID card number (e.g., E2K221133)'
     }
   },
   rating: {
